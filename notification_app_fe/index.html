@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0"/>
+
   <title>Notifications Dashboard</title>
 
   <style>
+
     *{
       margin:0;
       padding:0;
@@ -87,15 +90,9 @@
       font-size:14px;
     }
 
-    .loading,
-    .error{
-      text-align:center;
-      font-size:18px;
-      margin-top:30px;
-    }
-
   </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -113,6 +110,9 @@
   import { getAccessToken }
     from "./auth.js";
 
+  import { LOG }
+    from "../logging middleware/logger.js";
+
   const NOTIFICATION_URL =
     "http://4.224.186.213/evaluation-service/notifications";
 
@@ -126,11 +126,26 @@
 
     try {
 
-      // Get token from util file
+      await LOG(
+        "frontend",
+        "info",
+        "api",
+        "Fetching notifications started"
+      );
+
+      // Get token
       const token =
         await getAccessToken();
 
       if (!token) {
+
+        await LOG(
+          "frontend",
+          "info",
+          "api",
+          "Failed to get access token"
+        );
+
         throw new Error(
           "Failed to get token"
         );
@@ -143,12 +158,21 @@
           method: "GET",
 
           headers: {
-            "Authorization": `Bearer ${token}`
+            "Authorization":
+              `Bearer ${token}`
           }
         }
       );
 
       if (!response.ok) {
+
+        await LOG(
+          "frontend",
+          "info",
+          "api",
+          "Notifications API failed"
+        );
+
         throw new Error(
           "Failed to fetch notifications"
         );
@@ -157,10 +181,17 @@
       const data =
         await response.json();
 
+      await LOG(
+        "frontend",
+        "info",
+        "api",
+        "Notifications fetched successfully"
+      );
+
       let notifications =
         data.notifications;
 
-      // Sort
+      // Sort notifications
       notifications.sort((a, b) => {
 
         const typeCompare =
@@ -183,13 +214,27 @@
         notifications
       );
 
+      await LOG(
+        "frontend",
+        "info",
+        "api",
+        "Notifications rendered successfully"
+      );
+
     } catch (error) {
 
-      console.error(error);
+      await LOG(
+        "frontend",
+        "info",
+        "api",
+        error.message
+      );
     }
   }
 
-  function renderNotifications(notifications) {
+  function renderNotifications(
+    notifications
+  ) {
 
     const container =
       document.getElementById(
