@@ -98,98 +98,44 @@
 </head>
 <body>
 
-  <div class="container">
-    <h1>Notifications</h1>
+<div class="container">
 
-    <div id="loading" class="loading">
-      Loading notifications...
-    </div>
+  <h1>Notifications</h1>
 
-    <div id="error" class="error"></div>
-
-    <div id="notificationList" class="notification-list"></div>
+  <div id="notificationList"
+       class="notification-list">
   </div>
 
- <script>
+</div>
 
-  const AUTH_URL =
-    "http://4.224.186.213/evaluation-service/auth";
+<script type="module">
+
+  import { getAccessToken }
+    from "./auth.js";
 
   const NOTIFICATION_URL =
     "http://4.224.186.213/evaluation-service/notifications";
 
-  // Sort priority
   const priority = {
     Placement: 1,
     Result: 2,
     Event: 3
   };
 
-  // Auth request body
-  const authPayload = {
-
-    email: "snehanvitha.22mis7191@vitapstudent.ac.in",
-
-    name: "k snehanvitha",
-
-    rollno: "22MIS7191",
-
-    accessCode: "SfFuWg",
-
-    clientID:
-      "67be71d1-1695-4919-b416-89bf097384e7",
-
-    clientSecret:
-      "kqVXYqSbfrMhvMZf"
-  };
-
-  async function getAccessToken() {
-
-    try {
-
-      const response = await fetch(AUTH_URL, {
-
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify(authPayload)
-      });
-
-      if (!response.ok) {
-        throw new Error("Auth API failed");
-      }
-
-      const data = await response.json();
-
-      return data.access_token;
-
-    } catch (error) {
-
-      console.error("Auth Error:", error);
-
-      document.getElementById("error").innerText =
-        "Failed to get access token";
-
-      return null;
-    }
-  }
-
   async function fetchNotifications() {
 
     try {
 
-      // STEP 1:
-      // Get fresh token
-      const token = await getAccessToken();
+      // Get token from util file
+      const token =
+        await getAccessToken();
 
       if (!token) {
-        return;
+        throw new Error(
+          "Failed to get token"
+        );
       }
 
-      // STEP 2:
       // Fetch notifications
       const response = await fetch(
         NOTIFICATION_URL,
@@ -208,12 +154,13 @@
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      let notifications = data.notifications;
+      let notifications =
+        data.notifications;
 
-      // STEP 3:
-      // Sort notifications
+      // Sort
       notifications.sort((a, b) => {
 
         const typeCompare =
@@ -228,24 +175,17 @@
                new Date(a.Timestamp);
       });
 
-      // STEP 4:
       // Top 10
       notifications =
         notifications.slice(0, 10);
 
-      renderNotifications(notifications);
+      renderNotifications(
+        notifications
+      );
 
     } catch (error) {
 
       console.error(error);
-
-      document.getElementById("error").innerText =
-        error.message;
-
-    } finally {
-
-      document.getElementById("loading").style.display =
-        "none";
     }
   }
 
@@ -269,12 +209,9 @@
       );
 
       card.innerHTML = `
-        <div class="top">
 
-          <div class="type">
-            ${notification.Type}
-          </div>
-
+        <div class="type">
+          ${notification.Type}
         </div>
 
         <div class="message">
@@ -290,7 +227,6 @@
     });
   }
 
-  // Run on page load
   fetchNotifications();
 
 </script>
