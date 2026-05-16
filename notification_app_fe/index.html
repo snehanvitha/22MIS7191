@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notifications Dashboard</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body{
+      background:#f4f7fb;
+      padding:30px;
+    }
+
+    .container{
+      max-width:900px;
+      margin:auto;
+    }
+
+    h1{
+      text-align:center;
+      margin-bottom:25px;
+      color:#222;
+    }
+
+    .notification-list{
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+    }
+
+    .card{
+      background:white;
+      border-radius:12px;
+      padding:18px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.08);
+      transition:0.3s;
+      border-left:8px solid #999;
+    }
+
+    .card:hover{
+      transform:translateY(-3px);
+    }
+
+    .placement{
+      border-left-color:#2563eb;
+    }
+
+    .result{
+      border-left-color:#16a34a;
+    }
+
+    .event{
+      border-left-color:#f59e0b;
+    }
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+
+    .type{
+      font-weight:bold;
+      font-size:15px;
+      color:#333;
+      padding:6px 12px;
+      border-radius:20px;
+      background:#eef2ff;
+    }
+
+    .message{
+      font-size:18px;
+      margin-bottom:10px;
+      color:#111827;
+    }
+
+    .timestamp{
+      color:#6b7280;
+      font-size:14px;
+    }
+
+    .loading,
+    .error{
+      text-align:center;
+      font-size:18px;
+      margin-top:30px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Notifications</h1>
+
+    <div id="loading" class="loading">
+      Loading notifications...
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <div id="notificationList" class="notification-list"></div>
+  </div>
+
+  <script>
+    const API_URL = "http://4.224.186.213/evaluation-service/notifications";
+
+    const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJzbmVoYW52aXRoYS4yMm1pczcxOTFAdml0YXBzdHVkZW50LmFjLmluIiwiZXhwIjoxNzc4OTI5Njk0LCJpYXQiOjE3Nzg5Mjg3OTQsImlzcyI6IkFmZm9yZCBNZWRpY2FsIFRlY2hub2xvZ2llcyBQcml2YXRlIExpbWl0ZWQiLCJqdGkiOiJmODA4N2IxNy03ZGQyLTQ3ZjUtODRhMC1kMjZiYjA4MWUwMWQiLCJsb2NhbGUiOiJlbi1JTiIsIm5hbWUiOiJrIHNuZWhhbnZpdGhhIiwic3ViIjoiNjdiZTcxZDEtMTY5NS00OTE5LWI0MTYtODliZjA5NzM4NGU3In0sImVtYWlsIjoic25laGFudml0aGEuMjJtaXM3MTkxQHZpdGFwc3R1ZGVudC5hYy5pbiIsIm5hbWUiOiJrIHNuZWhhbnZpdGhhIiwicm9sbE5vIjoiMjJtaXM3MTkxIiwiYWNjZXNzQ29kZSI6IlNmRnVXZyIsImNsaWVudElEIjoiNjdiZTcxZDEtMTY5NS00OTE5LWI0MTYtODliZjA5NzM4NGU3IiwiY2xpZW50U2VjcmV0Ijoia3FWWFlxU2Jmck1odk1aZiJ9.oiexwKH6kurp19jqkxon1j10pfbJDvIMwGwTaQXIJEo";
+    const priority = {
+      "Placement": 1,
+      "Result": 2,
+      "Event": 3
+    };
+
+    async function fetchNotifications() {
+      try {
+
+        const response = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${TOKEN}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch notifications");
+        }
+
+        const data = await response.json();
+
+        let notifications = data.notifications;
+
+        // Sort by type priority first
+        // Then by latest timestamp
+        notifications.sort((a, b) => {
+
+          const typeCompare =
+            priority[a.Type] - priority[b.Type];
+
+          if (typeCompare !== 0) {
+            return typeCompare;
+          }
+
+          return new Date(b.Timestamp) - new Date(a.Timestamp);
+        });
+
+        // Top 10 only
+        notifications = notifications.slice(0, 10);
+
+        renderNotifications(notifications);
+
+      } catch (error) {
+
+        document.getElementById("error").innerText =
+          error.message;
+
+      } finally {
+
+        document.getElementById("loading").style.display = "none";
+      }
+    }
+
+    function renderNotifications(notifications) {
+
+      const container =
+        document.getElementById("notificationList");
+
+      container.innerHTML = "";
+
+      notifications.forEach(notification => {
+
+        const card = document.createElement("div");
+
+        card.classList.add(
+          "card",
+          notification.Type.toLowerCase()
+        );
+
+        card.innerHTML = `
+          <div class="top">
+            <div class="type">${notification.Type}</div>
+          </div>
+
+          <div class="message">
+            ${notification.Message}
+          </div>
+
+          <div class="timestamp">
+            ${notification.Timestamp}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // Fetch on every page load
+    fetchNotifications();
+
+  </script>
+
+</body>
+</html>
